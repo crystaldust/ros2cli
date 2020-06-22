@@ -31,25 +31,34 @@ from ros2param.api import get_parameter_value
 from ros2pkg.api import get_executable_paths
 from ros2pkg.api import PackageNotFound
 
-COMPONENTS_RESOURCE_TYPE = 'rclcpp_components'
+COMPONENTS_RESOURCE_TYPES = ['rclcpp_components', 'rclpy_components']
 
 
 def get_package_names_with_component_types():
     """Get the names of all packages that register component types in the ament index."""
-    return list(get_resources(COMPONENTS_RESOURCE_TYPE).keys())
+    # return list(get_resources(COMPONENTS_RESOURCE_TYPE).keys())
+    package_names = dict()
+    for res_type in COMPONENTS_RESOURCE_TYPES:
+        package_names[res_type] = list(get_resources(res_type).keys())
+    return package_names
 
 
-def get_package_component_types(*, package_name=None):
+def get_package_component_types(*, res_type=None, package_name=None):
     """
     Get all component types registered in the ament index for the given package.
 
     :param package_name: whose component types are to be retrieved.
     :return: a list of component type names.
     """
-    if not has_resource(COMPONENTS_RESOURCE_TYPE, package_name):
-        return []
-    component_registry, _ = get_resource(COMPONENTS_RESOURCE_TYPE, package_name)
-    return [line.split(';')[0] for line in component_registry.splitlines()]
+    # if not has_resource(COMPONENTS_RESOURCE_TYPE, package_name):
+    #     return []
+    # component_registry, _ = get_resource(COMPONENTS_RESOURCE_TYPE, package_name)
+    # return [line.split(';')[0] for line in component_registry.splitlines()]
+
+    component_types = []
+    component_registry, _ = get_resource(res_type, package_name)
+    component_types += [line.split(';')[0] for line in component_registry.splitlines()]
+    return component_types
 
 
 def get_registered_component_types():
@@ -58,10 +67,17 @@ def get_registered_component_types():
 
     :return: a list of (package name, component type names) tuples.
     """
-    return [
-        (package_name, get_package_component_types(package_name=package_name))
-        for package_name in get_package_names_with_component_types()
-    ]
+    # return [
+    #     (package_name, get_package_component_types(package_name=package_name))
+    #     for package_name in get_package_names_with_component_types()
+    # ]
+    package_type_name_dict = get_package_names_with_component_types()
+    ret = []
+    for res_type, package_names in package_type_name_dict.items():
+        for package_name in package_names:
+            component_types = get_package_component_types(res_type=res_type, package_name=package_name)
+            ret.append(('{}/{}'.format(res_type, package_name), component_types))
+    return ret
 
 
 ComponentInfo = namedtuple('Component', ('uid', 'name'))
