@@ -46,7 +46,6 @@ class PythonEntryPointComponentLoader(ComponentLoader):
         self.component_resource_type = 'rclpy_components'
 
     def load(self):
-        return []
         component_entry_points = entry_points().get(self.component_resource_type, None)
         if not component_entry_points:
             return []
