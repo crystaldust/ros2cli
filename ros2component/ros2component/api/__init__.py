@@ -30,6 +30,7 @@ from ros2node.api import get_service_server_info
 from ros2param.api import get_parameter_value
 from ros2pkg.api import get_executable_paths
 from ros2pkg.api import PackageNotFound
+from .component_loaders import AmentResourceComponentLoader, PythonEntryPointComponentLoader
 
 COMPONENTS_RESOURCE_TYPES = ['rclcpp_components', 'rclpy_components']
 
@@ -61,6 +62,15 @@ def get_package_component_types(*, res_type=None, package_name=None):
     return component_types
 
 
+res_loaders = {
+    'rclcpp_components': AmentResourceComponentLoader('rclcpp_components'),
+
+    # Both ament resource and entry point will work for python
+    # 'rclpy_components': AmentResourceComponentLoader('rclpy_components')
+    'rclpy_components': PythonEntryPointComponentLoader('rclpy_components')
+}
+
+
 def get_registered_component_types():
     """
     Get all component types registered in the ament index.
@@ -71,12 +81,11 @@ def get_registered_component_types():
     #     (package_name, get_package_component_types(package_name=package_name))
     #     for package_name in get_package_names_with_component_types()
     # ]
-    package_type_name_dict = get_package_names_with_component_types()
+    global res_loaders
     ret = []
-    for res_type, package_names in package_type_name_dict.items():
-        for package_name in package_names:
-            component_types = get_package_component_types(res_type=res_type, package_name=package_name)
-            ret.append(('{}/{}'.format(res_type, package_name), component_types))
+    for res_type in COMPONENTS_RESOURCE_TYPES:
+        component_types = res_loaders[res_type].load()
+        ret.extend(component_types)
     return ret
 
 
