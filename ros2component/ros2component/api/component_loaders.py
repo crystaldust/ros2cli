@@ -10,6 +10,9 @@ class ComponentLoader:
     def load(self):
         pass
 
+    def get_package_component_types(self, package_name):
+        pass
+
 
 class AmentResourceComponentLoader(ComponentLoader):
 
@@ -36,6 +39,13 @@ class AmentResourceComponentLoader(ComponentLoader):
             for package_name in self.get_package_names_with_component_types()
         ]
 
+    # def get_package_component_types(self, package_name):
+    #     if not has_resource(self.component_resource_type, package_name):
+    #         return []
+    #     component_registry, _ = get_resource(self.component_resource_type, package_name)
+    #     return [line.split(';')[0] for line in component_registry.splitlines()]
+
+
 
 class PythonEntryPointComponentLoader(ComponentLoader):
     def __init__(self, component_resource_type):
@@ -61,3 +71,9 @@ class PythonEntryPointComponentLoader(ComponentLoader):
 
         return [('{}/{}'.format(self.component_resource_type, package_name), values)
                 for package_name, values in components.items()]
+
+    def get_package_component_types(self, package_name):
+        component_entry_points = entry_points().get(self.component_resource_type, None)
+        if not component_entry_points:
+            return []
+        return [ep.name for ep in component_entry_points if str.split(ep.name)[0] == package_name]

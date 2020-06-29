@@ -14,10 +14,10 @@
 
 from collections import namedtuple
 import subprocess
-
 from ament_index_python import get_resource
 from ament_index_python import get_resources
 from ament_index_python import has_resource
+from typing import Dict
 
 import composition_interfaces.srv
 import rcl_interfaces.msg
@@ -30,9 +30,17 @@ from ros2node.api import get_service_server_info
 from ros2param.api import get_parameter_value
 from ros2pkg.api import get_executable_paths
 from ros2pkg.api import PackageNotFound
-from .component_loaders import AmentResourceComponentLoader, PythonEntryPointComponentLoader
+from .component_loaders import ComponentLoader, AmentResourceComponentLoader, PythonEntryPointComponentLoader
 
 COMPONENTS_RESOURCE_TYPES = ['rclcpp_components', 'rclpy_components']
+
+res_loaders: Dict[str, ComponentLoader] = {
+    'rclcpp_components': AmentResourceComponentLoader('rclcpp_components'),
+
+    # Both ament resource and entry point will work for python
+    # 'rclpy_components': AmentResourceComponentLoader('rclpy_components')
+    'rclpy_components': PythonEntryPointComponentLoader('rclpy_components')
+}
 
 
 def get_package_names_with_component_types():
@@ -44,7 +52,7 @@ def get_package_names_with_component_types():
     return package_names
 
 
-def get_package_component_types(*, res_type=None, package_name=None):
+def get_package_component_types(*, package_name=None):
     """
     Get all component types registered in the ament index for the given package.
 
@@ -56,19 +64,16 @@ def get_package_component_types(*, res_type=None, package_name=None):
     # component_registry, _ = get_resource(COMPONENTS_RESOURCE_TYPE, package_name)
     # return [line.split(';')[0] for line in component_registry.splitlines()]
 
+    # component_types = []
+    # component_registry, _ = get_resource(res_type, package_name)
+    # component_types += [line.split(';')[0] for line in component_registry.splitlines()]
+    # return component_types
     component_types = []
-    component_registry, _ = get_resource(res_type, package_name)
-    component_types += [line.split(';')[0] for line in component_registry.splitlines()]
+    global res_loaders
+    for resource_component_type, loader in res_loaders.items():
+        component_types.extend(loader.get_package_component_types(package_name))
     return component_types
 
-
-res_loaders = {
-    'rclcpp_components': AmentResourceComponentLoader('rclcpp_components'),
-
-    # Both ament resource and entry point will work for python
-    # 'rclpy_components': AmentResourceComponentLoader('rclpy_components')
-    'rclpy_components': PythonEntryPointComponentLoader('rclpy_components')
-}
 
 
 def get_registered_component_types():
