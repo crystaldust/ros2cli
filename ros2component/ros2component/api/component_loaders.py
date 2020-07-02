@@ -76,4 +76,4 @@ class PythonEntryPointComponentLoader(ComponentLoader):
         component_entry_points = entry_points().get(self.component_resource_type, None)
         if not component_entry_points:
             return []
-        return [ep.name for ep in component_entry_points if str.split(ep.name)[0] == package_name]
+        return [ep.name for ep in component_entry_points if str.split(ep.name, '::')[0] == package_name]
